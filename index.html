@@ -95,6 +95,7 @@
       background: #111;
     }
 
+    /* Overlays inside preview */
     #frameOverlay,
     #flashOverlay,
     #countdownOverlay,
@@ -110,6 +111,7 @@
       background: transparent;
     }
 
+    /* Logo preview ON TOP OF VIDEO, no white box */
     #previewLogo {
       top: 12px;
       right: 12px;
@@ -141,16 +143,17 @@
       z-index: 5;
     }
 
+    /* Preview frame styles – borders only */
     .previewWrapper.frame-none #frameOverlay {
       border: none;
     }
 
     .previewWrapper.frame-minimal #frameOverlay {
-      border: 6px solid #DFD7C9;
+      border: 6px solid #DFD7C9; /* cream border */
     }
 
     .previewWrapper.frame-signature #frameOverlay {
-      border: 6px solid #6b1e1e;
+      border: 6px solid #6b1e1e; /* red border */
     }
 
     .statusText {
@@ -297,7 +300,8 @@
 
   <!-- ATTRACT / IDLE SCREEN -->
   <div id="attractScreen">
-    <img id="attractLogo" src="dari-logo-filled.png" alt="DARI Logo" />
+    <!-- Use the transparent-background logo here so there is NO white box -->
+    <img id="attractLogo" src="dari-logo-outline-transparent.png" alt="DARI Logo" />
     <div id="attractTitle">DAILY RITUAL PH</div>
     <div id="attractSub">Tap to start your photo strip</div>
     <button id="attractButton">Tap to Start</button>
@@ -381,13 +385,14 @@ let stripImages = [];
 let isCapturing = false;
 let cameraStream = null;
 
-// idle behavior
+// Idle behavior
 const IDLE_TIMEOUT_MS = 90000; // 90s
 let idleTimer = null;
 
+// Approx strip width for 53mm thermal printer (around 384 dots)
 const STRIP_WIDTH = 384;
 
-// Cloudinary settings
+// Cloudinary settings (your real values)
 const CLOUDINARY_CLOUD_NAME = "dari-cafe";
 const CLOUDINARY_UPLOAD_PRESET = "dari-booth-unsigned";
 
@@ -418,7 +423,7 @@ async function initCamera() {
     statusText.textContent = "Camera ready. Tap “Start 3-Shot Strip”.";
   } catch (err) {
     console.error(err);
-    statusText.textContent = "Camera access failed. Please allow camera permissions.";
+    statusText.textContent = "Camera access failed: " + err.name + " – please allow camera in browser settings.";
   }
 }
 
@@ -541,12 +546,14 @@ startBtn.addEventListener("click", async () => {
   for (let i = 1; i <= TOTAL_SHOTS; i++) {
     statusText.textContent = `Photo ${i} of ${TOTAL_SHOTS}`;
 
+    // Countdown 3..2..1
     for (let c = 3; c >= 1; c--) {
       countdownOverlay.textContent = c;
       await sleep(700);
     }
     countdownOverlay.textContent = "📸";
 
+    // Flash effect like a camera click
     flashOverlay.classList.add("active");
     await sleep(120);
     flashOverlay.classList.remove("active");
@@ -578,7 +585,7 @@ startBtn.addEventListener("click", async () => {
 });
 
 /* --------------------------------
-   BUILD STRIP (same logic as PWA version)
+   BUILD STRIP (3 PHOTOS + LOGO + TEXT + VERTICAL DATE)
 -----------------------------------*/
 async function buildStrip() {
   if (stripImages.length === 0) return;
@@ -618,6 +625,7 @@ async function buildStrip() {
   ctx.fillStyle = baseBg;
   ctx.fillRect(0, 0, stripWidth, stripHeight);
 
+  // White card behind photos only for signature
   if (frame === "signature") {
     const cardMarginX = 18;
     const cardTop = topMargin - 10;
@@ -626,6 +634,7 @@ async function buildStrip() {
     ctx.fillRect(cardMarginX, cardTop, stripWidth - cardMarginX * 2, cardHeight);
   }
 
+  // Draw photos
   let y = topMargin;
   loadedPhotos.forEach(photo => {
     const photoX = 20;
@@ -634,14 +643,15 @@ async function buildStrip() {
     y += singleHeight + gap;
   });
 
-  let logoFile = "dari-logo-outline.png";
+  // Branding logo + text
+  let logoFile = "dari-logo-outline.png"; // default for Plain
   if (frame === "minimal") {
     logoFile = "dari-logo-filled.png";
   } else if (frame === "signature") {
     logoFile = "dari-logo-outline-transparent.png";
   }
 
-  const textColor = (frame === "signature") ? "#ffffff" : "#374139";
+  const textColor = (frame === "signature") ? "#000000" : "#374139";
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-US", {
@@ -670,6 +680,7 @@ async function buildStrip() {
 
     ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
 
+    // Text centered below logo
     ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.font = "600 24px 'Montserrat', system-ui, sans-serif";
@@ -679,12 +690,13 @@ async function buildStrip() {
     const safeTextY = Math.min(textY, maxTextY);
     ctx.fillText("Daily Ritual PH", stripWidth / 2, safeTextY);
 
+    // Vertical date on right side, safely inside
     ctx.save();
     ctx.fillStyle = textColor;
     ctx.font = "500 16px 'Montserrat', system-ui, sans-serif";
 
-    const dateBaseX = stripWidth - 28;
-    const dateBaseY = stripHeight - 90;
+    const dateBaseX = stripWidth - 28; // inset from right
+    const dateBaseY = stripHeight - 90; // lifted up from bottom
 
     ctx.translate(dateBaseX, dateBaseY);
     ctx.rotate(-Math.PI / 2);
@@ -695,6 +707,7 @@ async function buildStrip() {
   } catch (e) {
     console.warn("Logo could not be loaded; continuing without it.", e);
 
+    // Fallback: just text + date
     ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.font = "600 24px 'Montserrat', system-ui, sans-serif";
@@ -713,6 +726,7 @@ async function buildStrip() {
     ctx.restore();
   }
 
+  // Optional borders
   if (frame === "minimal") {
     ctx.strokeStyle = "#374139";
     ctx.lineWidth = 10;
@@ -725,6 +739,7 @@ async function buildStrip() {
     ctx.strokeRect(6, 6, stripWidth - 12, stripHeight - 12);
   }
 
+  // Show final strip
   video.style.display = "none";
   canvas.style.display = "block";
 
@@ -815,7 +830,7 @@ printBtn.addEventListener("click", () => {
             align-items: flex-start;
           }
           img {
-            width: 53mm;
+            width: 53mm; /* target width for 53mm thermal printer */
           }
         </style>
       </head>

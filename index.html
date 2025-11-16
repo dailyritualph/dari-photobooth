@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DARI Photo Booth – Kiosk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- PWA / fullscreen app hints -->
+  <meta name="theme-color" content="#3c463f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DARI Booth" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <!-- Montserrat font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #e7e1d5;
+      color: #222;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: #3c463f;
+      color: #fff;
+      padding: 12px;
+      text-align: center;
+      font-size: 22px;
+      letter-spacing: 2px;
+      font-weight: 700;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 56px);
+    }
+
+    @media (min-width: 900px) {
+      .container {
+        flex-direction: row;
+      }
+    }
+
+    .left {
+      flex: 3;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .right {
+      flex: 1;
+      background: #f9f7f3;
+      border-top: 4px solid #3c463f;
+      padding: 16px;
+    }
+
+    @media (min-width: 900px) {
+      .right {
+        border-top: none;
+        border-left: 4px solid #3c463f;
+      }
+    }
+
+    .previewWrapper {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      min-height: 260px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #cameraPreview,
+    #canvasOutput {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvasOutput {
+      display: none;
+      object-fit: contain;
+      background: #111;
+    }
+
+    #frameOverlay,
+    #flashOverlay,
+    #countdownOverlay,
+    #previewLogo {
+      position: absolute;
+      pointer-events: none;
+    }
+
+    #frameOverlay {
+      inset: 0;
+      box-sizing: border-box;
+      z-index: 2;
+      background: transparent;
+    }
+
+    #previewLogo {
+      top: 12px;
+      right: 12px;
+      max-width: 22%;
+      height: auto;
+      z-index: 3;
+    }
+
+    #flashOverlay {
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      z-index: 4;
+    }
+
+    #flashOverlay.active {
+      opacity: 1;
+    }
+
+    #countdownOverlay {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 64px;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 0 12px rgba(0,0,0,0.8);
+      z-index: 5;
+    }
+
+    .previewWrapper.frame-none #frameOverlay {
+      border: none;
+    }
+
+    .previewWrapper.frame-minimal #frameOverlay {
+      border: 6px solid #DFD7C9;
+    }
+
+    .previewWrapper.frame-signature #frameOverlay {
+      border: 6px solid #6b1e1e;
+    }
+
+    .statusText {
+      text-align: center;
+      font-size: 14px;
+      min-height: 18px;
+    }
+
+    .controls {
+      margin-top: 8px;
+    }
+
+    select,
+    button {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      border: none;
+      box-sizing: border-box;
+      font-family: "Montserrat", system-ui, sans-serif;
+    }
+
+    select {
+      background: #fff;
+      border: 1px solid #c0b8aa;
+    }
+
+    button {
+      background: #6b1e1e;
+      color: #fff;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: default;
+    }
+
+    .secondaryBtn {
+      background: #ffffff;
+      color: #3c463f;
+      border: 1px solid #3c463f;
+    }
+
+    .qrBox {
+      margin-top: 10px;
+      text-align: center;
+      padding: 14px;
+      background: #fff;
+      border-radius: 8px;
+      border: 2px solid #3c463f;
+      box-sizing: border-box;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .qrBox h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    #qrCode {
+      margin: 0 auto;
+      width: 180px;
+      height: 180px;
+    }
+
+    .qrHint {
+      font-size: 12px;
+      color: #555;
+    }
+
+    /* Attract screen */
+    #attractScreen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, #f3e7da, #dfd3c2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    #attractLogo {
+      max-width: 260px;
+      height: auto;
+      margin-bottom: 24px;
+    }
+
+    #attractTitle {
+      font-size: 26px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #3c463f;
+      margin-bottom: 10px;
+    }
+
+    #attractSub {
+      font-size: 16px;
+      color: #6b1e1e;
+      margin-bottom: 32px;
+    }
+
+    #attractButton {
+      padding: 16px 32px;
+      border-radius: 999px;
+      background: #6b1e1e;
+      color: #fff;
+      border: none;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    #attractHint {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #555;
+    }
+  </style>
+
+  <!-- QR Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+
+<body>
+  <header>DARI PHOTO BOOTH</header>
+
+  <!-- ATTRACT / IDLE SCREEN -->
+  <div id="attractScreen">
+    <img id="attractLogo" src="dari-logo-filled.png" alt="DARI Logo" />
+    <div id="attractTitle">DAILY RITUAL PH</div>
+    <div id="attractSub">Tap to start your photo strip</div>
+    <button id="attractButton">Tap to Start</button>
+    <div id="attractHint">Make sure the tablet camera is uncovered and volume is up for the countdown.</div>
+  </div>
+
+  <!-- MAIN APP UI -->
+  <div class="container" id="appContainer" style="visibility:hidden;">
+    <div class="left">
+      <div class="previewWrapper frame-none" id="previewWrapper">
+        <video id="cameraPreview" autoplay playsinline></video>
+        <canvas id="canvasOutput"></canvas>
+        <div id="frameOverlay"></div>
+        <img id="previewLogo" src="dari-logo-outline.png" alt="Frame preview logo" />
+        <div id="flashOverlay"></div>
+        <div id="countdownOverlay"></div>
+      </div>
+
+      <div class="statusText" id="statusText"></div>
+
+      <div class="controls">
+        <select id="filterSelect">
+          <option value="none">No Filter</option>
+          <option value="grayscale(1)">Black & White</option>
+          <option value="sepia(1)">Sepia</option>
+          <option value="contrast(1.3) saturate(1.1)">Vivid</option>
+        </select>
+
+        <select id="frameSelect">
+          <option value="none">Plain (white)</option>
+          <option value="minimal">Minimal (cream)</option>
+          <option value="signature">Signature (red)</option>
+        </select>
+
+        <button id="startBtn">Start 3-Shot Strip</button>
+        <button id="retakeBtn" class="secondaryBtn" disabled>Retake</button>
+        <button id="printBtn" disabled>Print</button>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="qrBox">
+        <div>
+          <h3>Scan to Download</h3>
+          <p class="qrHint">After your strip is captured, a QR code will appear here. Guests can scan it with their phone camera.</p>
+        </div>
+        <div id="qrCode"></div>
+        <div class="qrHint">Requires internet and your Cloudinary keys set in the code.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* --------------------------------
+   BASIC SETUP
+-----------------------------------*/
+const video = document.getElementById("cameraPreview");
+const canvas = document.getElementById("canvasOutput");
+const ctx = canvas.getContext("2d");
+
+const countdownOverlay = document.getElementById("countdownOverlay");
+const statusText = document.getElementById("statusText");
+const startBtn = document.getElementById("startBtn");
+const retakeBtn = document.getElementById("retakeBtn");
+const printBtn = document.getElementById("printBtn");
+const filterSelect = document.getElementById("filterSelect");
+const frameSelect = document.getElementById("frameSelect");
+const qrBox = document.getElementById("qrCode");
+
+const previewWrapper = document.getElementById("previewWrapper");
+const frameOverlay = document.getElementById("frameOverlay");
+const flashOverlay = document.getElementById("flashOverlay");
+const previewLogo = document.getElementById("previewLogo");
+
+const attractScreen = document.getElementById("attractScreen");
+const attractButton = document.getElementById("attractButton");
+const appContainer = document.getElementById("appContainer");
+
+const TOTAL_SHOTS = 3;
+let stripImages = [];
+let isCapturing = false;
+let cameraStream = null;
+
+// idle behavior
+const IDLE_TIMEOUT_MS = 90000; // 90s
+let idleTimer = null;
+
+const STRIP_WIDTH = 384;
+
+// Cloudinary settings
+const CLOUDINARY_CLOUD_NAME = "dari-cafe";
+const CLOUDINARY_UPLOAD_PRESET = "dari-booth-unsigned";
+
+function cloudinaryConfigured() {
+  return (
+    CLOUDINARY_CLOUD_NAME &&
+    CLOUDINARY_UPLOAD_PRESET &&
+    !CLOUDINARY_CLOUD_NAME.includes("YOUR_") &&
+    !CLOUDINARY_UPLOAD_PRESET.includes("YOUR_")
+  );
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/* --------------------------------
+   CAMERA INIT & STOP
+-----------------------------------*/
+async function initCamera() {
+  if (cameraStream) return;
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" },
+      audio: false
+    });
+    video.srcObject = cameraStream;
+    statusText.textContent = "Camera ready. Tap “Start 3-Shot Strip”.";
+  } catch (err) {
+    console.error(err);
+    statusText.textContent = "Camera access failed. Please allow camera permissions.";
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+    video.srcObject = null;
+  }
+}
+
+/* --------------------------------
+   IMAGE HELPERS
+-----------------------------------*/
+function loadLogo(filename) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = filename;
+  });
+}
+
+function loadImageFromDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+/* --------------------------------
+   FRAME PREVIEW
+-----------------------------------*/
+function updateFramePreview() {
+  const frame = frameSelect.value;
+
+  previewWrapper.classList.remove("frame-none", "frame-minimal", "frame-signature");
+  if (frame === "minimal") {
+    previewWrapper.classList.add("frame-minimal");
+    previewLogo.src = "dari-logo-filled.png";
+  } else if (frame === "signature") {
+    previewWrapper.classList.add("frame-signature");
+    previewLogo.src = "dari-logo-outline-transparent.png";
+  } else {
+    previewWrapper.classList.add("frame-none");
+    previewLogo.src = "dari-logo-outline.png";
+  }
+}
+
+frameSelect.addEventListener("change", () => { updateFramePreview(); resetIdleTimer(); });
+filterSelect.addEventListener("change", resetIdleTimer);
+
+/* --------------------------------
+   IDLE HANDLING & ATTRACT SCREEN
+-----------------------------------*/
+function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => {
+    goToAttract();
+  }, IDLE_TIMEOUT_MS);
+}
+
+function goToBooth() {
+  attractScreen.style.display = "none";
+  appContainer.style.visibility = "visible";
+  initCamera();
+  resetIdleTimer();
+}
+
+function goToAttract() {
+  stopCamera();
+  stripImages = [];
+  video.style.display = "block";
+  canvas.style.display = "none";
+  startBtn.disabled = false;
+  retakeBtn.disabled = true;
+  printBtn.disabled = true;
+  qrBox.innerHTML = "";
+  statusText.textContent = "";
+
+  appContainer.style.visibility = "visible";
+  attractScreen.style.display = "flex";
+}
+
+attractButton.addEventListener("click", () => {
+  goToBooth();
+});
+
+// Any interaction resets idle timer
+["click", "touchstart", "pointerdown", "keydown"].forEach(evt => {
+  window.addEventListener(evt, () => {
+    resetIdleTimer();
+  });
+});
+
+/* --------------------------------
+   CAPTURE LOGIC
+-----------------------------------*/
+startBtn.addEventListener("click", async () => {
+  resetIdleTimer();
+  if (isCapturing) return;
+  if (!cameraStream) {
+    statusText.textContent = "No camera stream yet. Check permissions.";
+    return;
+  }
+
+  isCapturing = true;
+  stripImages = [];
+  startBtn.disabled = true;
+  retakeBtn.disabled = true;
+  printBtn.disabled = true;
+  qrBox.innerHTML = "";
+  statusText.textContent = "Get ready…";
+
+  canvas.style.display = "none";
+  video.style.display = "block";
+
+  for (let i = 1; i <= TOTAL_SHOTS; i++) {
+    statusText.textContent = `Photo ${i} of ${TOTAL_SHOTS}`;
+
+    for (let c = 3; c >= 1; c--) {
+      countdownOverlay.textContent = c;
+      await sleep(700);
+    }
+    countdownOverlay.textContent = "📸";
+
+    flashOverlay.classList.add("active");
+    await sleep(120);
+    flashOverlay.classList.remove("active");
+
+    await sleep(80);
+
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) {
+      countdownOverlay.textContent = "";
+      continue;
+    }
+
+    const filterValue = filterSelect.value;
+    canvas.width = w;
+    canvas.height = h;
+    ctx.filter = (filterValue === "none") ? "none" : filterValue;
+    ctx.drawImage(video, 0, 0, w, h);
+    ctx.filter = "none";
+
+    stripImages.push(canvas.toDataURL("image/jpeg", 0.95));
+
+    countdownOverlay.textContent = "";
+    await sleep(300);
+  }
+
+  await buildStrip();
+  isCapturing = false;
+});
+
+/* --------------------------------
+   BUILD STRIP (same logic as PWA version)
+-----------------------------------*/
+async function buildStrip() {
+  if (stripImages.length === 0) return;
+
+  let loadedPhotos;
+  try {
+    loadedPhotos = await Promise.all(
+      stripImages.map(dataUrl => loadImageFromDataUrl(dataUrl))
+    );
+  } catch (e) {
+    console.error("Error loading captured frames:", e);
+    statusText.textContent = "Error building strip. Please try again.";
+    return;
+  }
+
+  const frame = frameSelect.value;
+
+  const stripWidth = STRIP_WIDTH;
+  const topMargin = 30;
+  const singleHeight = 220;
+  const gap = 12;
+  const photosTotalHeight = TOTAL_SHOTS * singleHeight + (TOTAL_SHOTS - 1) * gap;
+
+  const brandingHeight = 220;
+  const bottomMargin = 40;
+
+  const brandingTop = topMargin + photosTotalHeight + 20;
+  const stripHeight = brandingTop + brandingHeight + bottomMargin;
+
+  canvas.width = stripWidth;
+  canvas.height = stripHeight;
+
+  let baseBg = "#ffffff";
+  if (frame === "minimal") baseBg = "#DFD7C9";
+  if (frame === "signature") baseBg = "#6b1e1e";
+
+  ctx.fillStyle = baseBg;
+  ctx.fillRect(0, 0, stripWidth, stripHeight);
+
+  if (frame === "signature") {
+    const cardMarginX = 18;
+    const cardTop = topMargin - 10;
+    const cardHeight = photosTotalHeight + 20;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(cardMarginX, cardTop, stripWidth - cardMarginX * 2, cardHeight);
+  }
+
+  let y = topMargin;
+  loadedPhotos.forEach(photo => {
+    const photoX = 20;
+    const photoW = stripWidth - 40;
+    ctx.drawImage(photo, photoX, y, photoW, singleHeight);
+    y += singleHeight + gap;
+  });
+
+  let logoFile = "dari-logo-outline.png";
+  if (frame === "minimal") {
+    logoFile = "dari-logo-filled.png";
+  } else if (frame === "signature") {
+    logoFile = "dari-logo-outline-transparent.png";
+  }
+
+  const textColor = (frame === "signature") ? "#ffffff" : "#374139";
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+
+  try {
+    const logoImg = await loadLogo(logoFile);
+
+    let desiredWidth = stripWidth * 0.5;
+    let ratio = logoImg.height / logoImg.width;
+    let logoW = desiredWidth;
+    let logoH = desiredWidth * ratio;
+
+    const maxLogoHeight = brandingHeight * 0.5;
+    if (logoH > maxLogoHeight) {
+      const scale = maxLogoHeight / logoH;
+      logoW *= scale;
+      logoH *= scale;
+    }
+
+    const logoX = (stripWidth - logoW) / 2;
+    const logoY = brandingTop + 10;
+
+    ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "center";
+    ctx.font = "600 24px 'Montserrat', system-ui, sans-serif";
+
+    const textY = logoY + logoH + 32;
+    const maxTextY = brandingTop + brandingHeight - 40;
+    const safeTextY = Math.min(textY, maxTextY);
+    ctx.fillText("Daily Ritual PH", stripWidth / 2, safeTextY);
+
+    ctx.save();
+    ctx.fillStyle = textColor;
+    ctx.font = "500 16px 'Montserrat', system-ui, sans-serif";
+
+    const dateBaseX = stripWidth - 28;
+    const dateBaseY = stripHeight - 90;
+
+    ctx.translate(dateBaseX, dateBaseY);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = "center";
+    ctx.fillText(dateStr, 0, 0);
+    ctx.restore();
+
+  } catch (e) {
+    console.warn("Logo could not be loaded; continuing without it.", e);
+
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "center";
+    ctx.font = "600 24px 'Montserrat', system-ui, sans-serif";
+    const fallbackY = brandingTop + brandingHeight / 2;
+    ctx.fillText("Daily Ritual PH", stripWidth / 2, fallbackY);
+
+    ctx.save();
+    ctx.fillStyle = textColor;
+    ctx.font = "500 16px 'Montserrat', system-ui, sans-serif";
+    const dateBaseX = stripWidth - 28;
+    const dateBaseY = stripHeight - 90;
+    ctx.translate(dateBaseX, dateBaseY);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = "center";
+    ctx.fillText(dateStr, 0, 0);
+    ctx.restore();
+  }
+
+  if (frame === "minimal") {
+    ctx.strokeStyle = "#374139";
+    ctx.lineWidth = 10;
+    ctx.strokeRect(10, 10, stripWidth - 20, stripHeight - 20);
+  }
+
+  if (frame === "signature") {
+    ctx.strokeStyle = "#4f1414";
+    ctx.lineWidth = 8;
+    ctx.strokeRect(6, 6, stripWidth - 12, stripHeight - 12);
+  }
+
+  video.style.display = "none";
+  canvas.style.display = "block";
+
+  statusText.textContent = "Strip ready! You can print or scan the QR code.";
+
+  retakeBtn.disabled = false;
+  printBtn.disabled = false;
+
+  uploadStripToCloudinary();
+}
+
+/* --------------------------------
+   UPLOAD TO CLOUDINARY + QR
+-----------------------------------*/
+function uploadStripToCloudinary() {
+  if (!cloudinaryConfigured()) {
+    statusText.textContent +=
+      " (Cloudinary not configured correctly, QR disabled.)";
+    return;
+  }
+
+  canvas.toBlob(async (blob) => {
+    try {
+      const url =
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+      const formData = new FormData();
+      formData.append("file", blob);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+      const res = await fetch(url, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      const fileUrl = data.secure_url || data.url;
+      if (!fileUrl) throw new Error("No URL in Cloudinary response");
+
+      makeQR(fileUrl);
+      statusText.textContent += " QR ready.";
+    } catch (err) {
+      console.error(err);
+      statusText.textContent = "Strip ready. QR upload failed.";
+    }
+  }, "image/jpeg");
+}
+
+function makeQR(url) {
+  qrBox.innerHTML = "";
+  new QRCode(qrBox, {
+    text: url,
+    width: 180,
+    height: 180
+  });
+}
+
+/* --------------------------------
+   RETAKE + PRINT
+-----------------------------------*/
+retakeBtn.addEventListener("click", () => {
+  resetIdleTimer();
+  stripImages = [];
+  canvas.style.display = "none";
+  video.style.display = "block";
+  startBtn.disabled = false;
+  retakeBtn.disabled = true;
+  qrBox.innerHTML = "";
+  statusText.textContent = "Camera ready. Tap “Start 3-Shot Strip” again.";
+});
+
+printBtn.addEventListener("click", () => {
+  resetIdleTimer();
+  const img = canvas.toDataURL("image/jpeg", 0.95);
+  const win = window.open("", "_blank");
+  win.document.write(`
+    <html>
+      <head>
+        <title>DARI Strip</title>
+        <style>
+          @page {
+            margin: 0;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+          }
+          img {
+            width: 53mm;
+          }
+        </style>
+      </head>
+      <body>
+        <img src="${img}" />
+      </body>
+    </html>
+  `);
+  win.document.close();
+  win.focus();
+  win.onload = function () {
+    win.print();
+  };
+});
+
+/* --------------------------------
+   ON LOAD
+-----------------------------------*/
+window.addEventListener("load", () => {
+  // Start in attract mode; camera starts on first tap
+  goToAttract();
+  updateFramePreview();
+});
+</script>
+
+</body>
+</html>

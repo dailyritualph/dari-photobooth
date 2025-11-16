@@ -1,0 +1,15 @@
+{
+  "name": "DARI Photo Booth",
+  "short_name": "DARI Booth",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#3c463f",
+  "theme_color": "#3c463f",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "name": "DARI Photo Booth",
   "short_name": "DARI Booth",
-  "start_url": "/",
+  "start_url": "/dari-photobooth",
   "display": "standalone",
   "background_color": "#3c463f",
   "theme_color": "#3c463f",

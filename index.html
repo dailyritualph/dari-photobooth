@@ -5,13 +5,13 @@
   <title>DARI Photo Booth – Kiosk</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-  <!-- PWA / fullscreen app hints -->
+  <!-- PWA hooks – keep the /dari-photobooth path for GitHub Pages -->
   <meta name="theme-color" content="#3c463f" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" href="/dari-photobooth/manifest.webmanifest" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DARI Booth" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="/dari-photobooth/icon-192.png" />
 
   <!-- Montserrat font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,316 +19,318 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-  }
-
-  body {
-    font-family: "Montserrat", sans-serif;
-    background: #e7e1d5;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  header {
-    background: #3c463f;
-    color: #fff;
-    padding: 14px;
-    text-align: center;
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 2px;
-  }
-
-  /* ----------------------------
-     MAIN CONTAINER
-  -----------------------------*/
-  .container {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column; /* default = portrait */
-    height: 100dvh;
-    min-height: 0;
-  }
-
-  /* LANDSCAPE = two columns */
-  @media (orientation: landscape) {
-    .container {
-      flex-direction: row;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
     }
-    .right {
-      border-left: 4px solid #3c463f;
-      border-top: none;
-    }
-  }
 
-  /* PORTRAIT = stacked vertically */
-  @media (orientation: portrait) {
-    .container {
+    body {
+      font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #e7e1d5;
+      color: #222;
+      display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
-    .right {
-      border-top: 4px solid #3c463f;
-      border-left: none;
+
+    header {
+      background: #3c463f;
+      color: #fff;
+      padding: 14px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
     }
-  }
 
-  /* ----------------------------
-     LEFT SIDE (LIVE PREVIEW)
-  -----------------------------*/
-  .left {
-    flex: 0 0 65%; /* portrait */
-    display: flex;
-    padding: 10px;
-    box-sizing: border-box;
-  }
-
-  @media (orientation: landscape) {
-    .left {
-      flex: 3 1 auto;
+    /* main layout: single column, centered */
+    .main-shell {
+      flex: 1 1 auto;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 8px;
+      box-sizing: border-box;
     }
-  }
 
-  .previewWrapper {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
-  }
+    .app {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-  #cameraPreview,
-  #canvasOutput {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+    .previewWrapper {
+      position: relative;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 280px;
+      max-height: 65vh;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
 
-  #canvasOutput {
-    display: none;
-    object-fit: contain;
-    background: #111;
-  }
+    #cameraPreview,
+    #canvasOutput {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-  /* overlays */
-  #frameOverlay,
-  #previewLogo,
-  #flashOverlay,
-  #countdownOverlay {
-    position: absolute;
-    pointer-events: none;
-    z-index: 2;
-  }
+    #canvasOutput {
+      display: none;
+      object-fit: contain;
+      background: #111;
+    }
 
-  #frameOverlay {
-    inset: 0;
-    border: none;
-    z-index: 2;
-  }
+    /* overlays */
+    #frameOverlay,
+    #previewLogo,
+    #flashOverlay,
+    #countdownOverlay {
+      position: absolute;
+      pointer-events: none;
+    }
 
-  .previewWrapper.frame-minimal #frameOverlay {
-    border: 6px solid #DFD7C9;
-  }
-  .previewWrapper.frame-signature #frameOverlay {
-    border: 6px solid #6b1e1e;
-  }
+    #frameOverlay {
+      inset: 0;
+      border: none;
+      z-index: 2;
+    }
 
-  #previewLogo {
-    top: 14px;
-    right: 14px;
-    width: 22%;
-    height: auto;
-  }
+    .previewWrapper.frame-minimal #frameOverlay {
+      border: 6px solid #DFD7C9;
+    }
+    .previewWrapper.frame-signature #frameOverlay {
+      border: 6px solid #6b1e1e;
+    }
 
-  #flashOverlay {
-    inset: 0;
-    background: white;
-    opacity: 0;
-    transition: opacity 0.15s ease-out;
-    z-index: 5;
-  }
+    #previewLogo {
+      top: 14px;
+      right: 14px;
+      width: 22%;
+      height: auto;
+      z-index: 3;
+    }
 
-  #flashOverlay.active {
-    opacity: 1;
-  }
+    #flashOverlay {
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+      z-index: 5;
+    }
 
-  #countdownOverlay {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 64px;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 0 10px rgba(0,0,0,0.8);
-    z-index: 6;
-  }
+    #flashOverlay.active {
+      opacity: 1;
+    }
 
-  /* ----------------------------
-     RIGHT SIDE (CONTROLS)
-  -----------------------------*/
-  .right {
-    flex: 1 1 auto;
-    background: #f9f7f3;
-    padding: 16px;
-    box-sizing: border-box;
-    overflow-y: auto;          /* allow scrolling only here */
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+    #countdownOverlay {
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 64px;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+      z-index: 6;
+    }
 
-  select,
-  button {
-    width: 100%;
-    padding: 14px 16px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: none;
-    font-family: "Montserrat", sans-serif;
-  }
+    .statusText {
+      font-size: 14px;
+      text-align: center;
+      min-height: 18px;
+      color: #444;
+    }
 
-  select {
-    border: 1px solid #c0b8aa;
-    background: #fff;
-  }
+    /* LIVE VIEW CONTROLS ROW */
+    .live-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: stretch;
+    }
 
-  button {
-    background: #6b1e1e;
-    color: white;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
+    .live-controls select,
+    .live-controls button {
+      flex: 1 1 0;
+      min-width: 0;
+    }
 
-  button.secondaryBtn {
-    background: white;
-    color: #3c463f;
-    border: 1px solid #3c463f;
-  }
+    /* RESULT CONTROLS ROW (after strip) */
+    .result-controls {
+      display: none; /* hidden until strip is ready */
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: stretch;
+      margin-top: 4px;
+    }
 
-  button:disabled {
-    opacity: 0.5;
-  }
+    .result-controls button {
+      flex: 1 1 0;
+      min-width: 0;
+    }
 
-  .statusText {
-    font-size: 14px;
-    text-align: center;
-    min-height: 18px;
-    color: #444;
-  }
+    select,
+    button {
+      padding: 12px 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      box-sizing: border-box;
+      font-family: "Montserrat", system-ui, sans-serif;
+    }
 
-  /* ----------------------------
-     QR BOX (AFTER CAPTURE)
-  -----------------------------*/
-  .qrBox {
-    text-align: center;
-    padding: 16px;
-    background: white;
-    border: 2px solid #3c463f;
-    border-radius: 10px;
-  }
+    select {
+      border: 1px solid #c0b8aa;
+      background: white;
+    }
 
-  #qrCode {
-    width: 180px;
-    height: 180px;
-    margin: 0 auto;
-  }
+    button {
+      background: #6b1e1e;
+      color: white;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
 
-  .qrHint {
-    font-size: 13px;
-    color: #555;
-  }
+    button.secondaryBtn {
+      background: white;
+      color: #3c463f;
+      border: 1px solid #3c463f;
+    }
 
-  /* ----------------------------
-     ATTRACT SCREEN
-  -----------------------------*/
-  #attractScreen {
-    position: fixed;
-    inset: 0;
-    background: radial-gradient(circle at top, #f3e7da, #dfd3c2);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 24px;
-    text-align: center;
-  }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
 
-  #attractLogo {
-    max-width: 260px;
-    margin-bottom: 20px;
-  }
+    /* QR panel – small & only when needed */
+    #qrPanel {
+      display: none;
+      margin: 6px auto 0;
+      padding: 10px;
+      background: white;
+      border-radius: 10px;
+      border: 2px solid #3c463f;
+      max-width: 320px;
+      text-align: center;
+      box-sizing: border-box;
+    }
 
-  #attractTitle {
-    color: #3c463f;
-    font-size: 26px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
+    #qrCode {
+      width: 140px;
+      height: 140px;
+      margin: 4px auto;
+    }
 
-  #attractSub {
-    color: #6b1e1e;
-    font-size: 16px;
-    margin-bottom: 32px;
-  }
+    .qrHint {
+      font-size: 12px;
+      color: #555;
+    }
 
-  #attractButton {
-    background: #6b1e1e;
-    color: white;
-    padding: 16px 32px;
-    border: none;
-    border-radius: 999px;
-    font-size: 20px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
+    .qrClose {
+      margin-top: 4px;
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      color: #6b1e1e;
+    }
 
-  #attractHint {
-    font-size: 12px;
-    color: #444;
-    margin-top: 20px;
-  }
-</style>
+    /* ATTRACT SCREEN */
+    #attractScreen {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, #f3e7da, #dfd3c2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 24px;
+      text-align: center;
+      box-sizing: border-box;
+    }
 
+    #attractLogo {
+      max-width: 260px;
+      margin-bottom: 20px;
+    }
 
-  <!-- QR Generator -->
+    #attractTitle {
+      color: #3c463f;
+      font-size: 26px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    #attractSub {
+      color: #6b1e1e;
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+
+    #attractButton {
+      background: #6b1e1e;
+      color: white;
+      padding: 16px 32px;
+      border: none;
+      border-radius: 999px;
+      font-size: 20px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+    }
+
+    #attractHint {
+      font-size: 12px;
+      color: #444;
+      margin-top: 20px;
+    }
+  </style>
+
+  <!-- QR library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
   <header>DARI PHOTO BOOTH</header>
 
-  <!-- ATTRACT / IDLE SCREEN -->
+  <!-- ATTRACT SCREEN -->
   <div id="attractScreen">
-    <!-- Use the transparent-background logo here so there is NO white box -->
-    <img id="attractLogo" src="dari-logo-outline-transparent.png" alt="DARI Logo" />
+    <img id="attractLogo" src="dari-logo-filled.png" alt="DARI Logo" />
     <div id="attractTitle">DAILY RITUAL PH</div>
     <div id="attractSub">Tap to start your photo strip</div>
     <button id="attractButton">Tap to Start</button>
     <div id="attractHint">Make sure the tablet camera is uncovered and volume is up for the countdown.</div>
   </div>
 
-  <!-- MAIN APP UI -->
-  <div class="container" id="appContainer" style="visibility:hidden;">
-    <div class="left">
+  <!-- MAIN APP -->
+  <div class="main-shell" id="appShell" style="visibility:hidden;">
+    <div class="app">
       <div class="previewWrapper frame-none" id="previewWrapper">
         <video id="cameraPreview" autoplay playsinline></video>
         <canvas id="canvasOutput"></canvas>
+
         <div id="frameOverlay"></div>
-        <img id="previewLogo" src="dari-logo-outline.png" alt="Frame preview logo" />
+        <img id="previewLogo" src="dari-logo-outline.png" alt="DARI logo preview" />
         <div id="flashOverlay"></div>
         <div id="countdownOverlay"></div>
       </div>
 
       <div class="statusText" id="statusText"></div>
 
-      <div class="controls">
+      <!-- LIVE VIEW CONTROLS (visible while camera live) -->
+      <div class="live-controls" id="liveControls">
         <select id="filterSelect">
           <option value="none">No Filter</option>
           <option value="grayscale(1)">Black & White</option>
@@ -342,63 +344,71 @@
           <option value="signature">Signature (red)</option>
         </select>
 
-        <button id="startBtn">Start 3-Shot Strip</button>
-        <button id="retakeBtn" class="secondaryBtn" disabled>Retake</button>
-        <button id="printBtn" disabled>Print</button>
+        <button id="startBtn">Start</button>
       </div>
-    </div>
 
-    <div class="right">
-      <div class="qrBox">
-        <div>
-          <h3>Scan to Download</h3>
-          <p class="qrHint">After your strip is captured, a QR code will appear here. Guests can scan it with their phone camera.</p>
-        </div>
+      <!-- RESULT CONTROLS (visible when strip is shown) -->
+      <div class="result-controls" id="resultControls">
+        <button id="retakeBtn" class="secondaryBtn">Retake</button>
+        <button id="downloadBtn" class="secondaryBtn">Download / QR</button>
+        <button id="printBtn">Print</button>
+      </div>
+
+      <!-- Small QR panel, shown only after Download press -->
+      <div id="qrPanel">
         <div id="qrCode"></div>
-        <div class="qrHint">Requires internet and your Cloudinary keys set in the code.</div>
+        <div class="qrHint">Scan to download your strip.</div>
+        <div class="qrClose" id="qrClose">Hide</div>
       </div>
     </div>
   </div>
 
 <script>
-/* --------------------------------
-   BASIC SETUP
------------------------------------*/
+/* -----------------------------
+   BASIC DOM & STATE
+------------------------------*/
 const video = document.getElementById("cameraPreview");
 const canvas = document.getElementById("canvasOutput");
 const ctx = canvas.getContext("2d");
 
-const countdownOverlay = document.getElementById("countdownOverlay");
 const statusText = document.getElementById("statusText");
-const startBtn = document.getElementById("startBtn");
-const retakeBtn = document.getElementById("retakeBtn");
-const printBtn = document.getElementById("printBtn");
-const filterSelect = document.getElementById("filterSelect");
-const frameSelect = document.getElementById("frameSelect");
-const qrBox = document.getElementById("qrCode");
-
+const countdownOverlay = document.getElementById("countdownOverlay");
+const flashOverlay = document.getElementById("flashOverlay");
 const previewWrapper = document.getElementById("previewWrapper");
 const frameOverlay = document.getElementById("frameOverlay");
-const flashOverlay = document.getElementById("flashOverlay");
 const previewLogo = document.getElementById("previewLogo");
+
+const filterSelect = document.getElementById("filterSelect");
+const frameSelect = document.getElementById("frameSelect");
+const startBtn = document.getElementById("startBtn");
+
+const resultControls = document.getElementById("resultControls");
+const liveControls = document.getElementById("liveControls");
+const retakeBtn = document.getElementById("retakeBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const printBtn = document.getElementById("printBtn");
+
+const qrPanel = document.getElementById("qrPanel");
+const qrBox = document.getElementById("qrCode");
+const qrClose = document.getElementById("qrClose");
 
 const attractScreen = document.getElementById("attractScreen");
 const attractButton = document.getElementById("attractButton");
-const appContainer = document.getElementById("appContainer");
+const appShell = document.getElementById("appShell");
 
 const TOTAL_SHOTS = 3;
+const STRIP_WIDTH = 384; // approx for 53mm printer
+
+let cameraStream = null;
 let stripImages = [];
 let isCapturing = false;
-let cameraStream = null;
+let lastUploadedUrl = null;
 
-// Idle behavior
-const IDLE_TIMEOUT_MS = 90000; // 90s
+// idle → go back to attract
+const IDLE_TIMEOUT_MS = 90000;
 let idleTimer = null;
 
-// Approx strip width for 53mm thermal printer (around 384 dots)
-const STRIP_WIDTH = 384;
-
-// Cloudinary settings (your real values)
+/* Cloudinary */
 const CLOUDINARY_CLOUD_NAME = "dari-cafe";
 const CLOUDINARY_UPLOAD_PRESET = "dari-booth-unsigned";
 
@@ -415,9 +425,9 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/* --------------------------------
-   CAMERA INIT & STOP
------------------------------------*/
+/* -----------------------------
+   CAMERA
+------------------------------*/
 async function initCamera() {
   if (cameraStream) return;
   try {
@@ -426,10 +436,11 @@ async function initCamera() {
       audio: false
     });
     video.srcObject = cameraStream;
-    statusText.textContent = "Camera ready. Tap “Start 3-Shot Strip”.";
+    statusText.textContent = "Camera ready. Tap “Start”.";
   } catch (err) {
     console.error(err);
-    statusText.textContent = "Camera access failed: " + err.name + " – please allow camera in browser settings.";
+    statusText.textContent =
+      "Camera access failed: " + err.name + " – check browser permissions.";
   }
 }
 
@@ -441,18 +452,9 @@ function stopCamera() {
   }
 }
 
-/* --------------------------------
+/* -----------------------------
    IMAGE HELPERS
------------------------------------*/
-function loadLogo(filename) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = filename;
-  });
-}
-
+------------------------------*/
 function loadImageFromDataUrl(dataUrl) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -462,13 +464,22 @@ function loadImageFromDataUrl(dataUrl) {
   });
 }
 
-/* --------------------------------
+function loadLogo(filename) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = filename;
+  });
+}
+
+/* -----------------------------
    FRAME PREVIEW
------------------------------------*/
+------------------------------*/
 function updateFramePreview() {
   const frame = frameSelect.value;
-
   previewWrapper.classList.remove("frame-none", "frame-minimal", "frame-signature");
+
   if (frame === "minimal") {
     previewWrapper.classList.add("frame-minimal");
     previewLogo.src = "dari-logo-filled.png";
@@ -480,13 +491,12 @@ function updateFramePreview() {
     previewLogo.src = "dari-logo-outline.png";
   }
 }
-
 frameSelect.addEventListener("change", () => { updateFramePreview(); resetIdleTimer(); });
 filterSelect.addEventListener("change", resetIdleTimer);
 
-/* --------------------------------
-   IDLE HANDLING & ATTRACT SCREEN
------------------------------------*/
+/* -----------------------------
+   IDLE → ATTRACT
+------------------------------*/
 function resetIdleTimer() {
   if (idleTimer) clearTimeout(idleTimer);
   idleTimer = setTimeout(() => {
@@ -496,7 +506,7 @@ function resetIdleTimer() {
 
 function goToBooth() {
   attractScreen.style.display = "none";
-  appContainer.style.visibility = "visible";
+  appShell.style.visibility = "visible";
   initCamera();
   resetIdleTimer();
 }
@@ -504,120 +514,101 @@ function goToBooth() {
 function goToAttract() {
   stopCamera();
   stripImages = [];
+  lastUploadedUrl = null;
+
   video.style.display = "block";
   canvas.style.display = "none";
+
+  liveControls.style.display = "flex";
+  resultControls.style.display = "none";
+  qrPanel.style.display = "none";
+
   startBtn.disabled = false;
-  retakeBtn.disabled = true;
-  printBtn.disabled = true;
-  qrBox.innerHTML = "";
   statusText.textContent = "";
 
-  appContainer.style.visibility = "visible";
   attractScreen.style.display = "flex";
 }
 
-attractButton.addEventListener("click", () => {
-  goToBooth();
-});
-
-// Any interaction resets idle timer
-["click", "touchstart", "pointerdown", "keydown"].forEach(evt => {
-  window.addEventListener(evt, () => {
-    resetIdleTimer();
-  });
-});
-
-/* --------------------------------
-   CAPTURE LOGIC
------------------------------------*/
+/* -----------------------------
+   CAPTURE FLOW
+------------------------------*/
 startBtn.addEventListener("click", async () => {
   resetIdleTimer();
-  if (isCapturing) return;
-  if (!cameraStream) {
-    statusText.textContent = "No camera stream yet. Check permissions.";
-    return;
-  }
+  if (isCapturing || !cameraStream) return;
 
   isCapturing = true;
   stripImages = [];
-  startBtn.disabled = true;
-  retakeBtn.disabled = true;
-  printBtn.disabled = true;
-  qrBox.innerHTML = "";
+  lastUploadedUrl = null;
+  qrPanel.style.display = "none";
+
+  liveControls.style.display = "none";       // hide controls while capturing
+  resultControls.style.display = "none";
+
   statusText.textContent = "Get ready…";
 
   canvas.style.display = "none";
   video.style.display = "block";
 
-  for (let i = 1; i <= TOTAL_SHOTS; i++) {
-    statusText.textContent = `Photo ${i} of ${TOTAL_SHOTS}`;
+  for (let shot = 1; shot <= TOTAL_SHOTS; shot++) {
+    statusText.textContent = `Photo ${shot} of ${TOTAL_SHOTS}`;
 
-    // Countdown 3..2..1
     for (let c = 3; c >= 1; c--) {
       countdownOverlay.textContent = c;
       await sleep(700);
     }
     countdownOverlay.textContent = "📸";
 
-    // Flash effect like a camera click
     flashOverlay.classList.add("active");
     await sleep(120);
     flashOverlay.classList.remove("active");
-
     await sleep(80);
 
     const w = video.videoWidth;
     const h = video.videoHeight;
-    if (!w || !h) {
-      countdownOverlay.textContent = "";
-      continue;
-    }
+    if (!w || !h) continue;
 
-    const filterValue = filterSelect.value;
+    const filter = filterSelect.value;
     canvas.width = w;
     canvas.height = h;
-    ctx.filter = (filterValue === "none") ? "none" : filterValue;
+
+    ctx.filter = (filter === "none") ? "none" : filter;
     ctx.drawImage(video, 0, 0, w, h);
     ctx.filter = "none";
 
     stripImages.push(canvas.toDataURL("image/jpeg", 0.95));
 
     countdownOverlay.textContent = "";
-    await sleep(300);
+    await sleep(250);
   }
 
   await buildStrip();
   isCapturing = false;
 });
 
-/* --------------------------------
-   BUILD STRIP (3 PHOTOS + LOGO + TEXT + VERTICAL DATE)
------------------------------------*/
+/* -----------------------------
+   BUILD STRIP (3 shots)
+------------------------------*/
 async function buildStrip() {
-  if (stripImages.length === 0) return;
+  if (!stripImages.length) return;
 
-  let loadedPhotos;
+  let photos;
   try {
-    loadedPhotos = await Promise.all(
-      stripImages.map(dataUrl => loadImageFromDataUrl(dataUrl))
-    );
+    photos = await Promise.all(stripImages.map(loadImageFromDataUrl));
   } catch (e) {
-    console.error("Error loading captured frames:", e);
-    statusText.textContent = "Error building strip. Please try again.";
+    console.error(e);
+    statusText.textContent = "Error building strip, please try again.";
     return;
   }
 
   const frame = frameSelect.value;
-
   const stripWidth = STRIP_WIDTH;
   const topMargin = 30;
   const singleHeight = 220;
   const gap = 12;
-  const photosTotalHeight = TOTAL_SHOTS * singleHeight + (TOTAL_SHOTS - 1) * gap;
 
+  const photosTotalHeight = TOTAL_SHOTS * singleHeight + (TOTAL_SHOTS - 1) * gap;
   const brandingHeight = 220;
   const bottomMargin = 40;
-
   const brandingTop = topMargin + photosTotalHeight + 20;
   const stripHeight = brandingTop + brandingHeight + bottomMargin;
 
@@ -631,7 +622,6 @@ async function buildStrip() {
   ctx.fillStyle = baseBg;
   ctx.fillRect(0, 0, stripWidth, stripHeight);
 
-  // White card behind photos only for signature
   if (frame === "signature") {
     const cardMarginX = 18;
     const cardTop = topMargin - 10;
@@ -640,22 +630,17 @@ async function buildStrip() {
     ctx.fillRect(cardMarginX, cardTop, stripWidth - cardMarginX * 2, cardHeight);
   }
 
-  // Draw photos
   let y = topMargin;
-  loadedPhotos.forEach(photo => {
-    const photoX = 20;
-    const photoW = stripWidth - 40;
-    ctx.drawImage(photo, photoX, y, photoW, singleHeight);
+  photos.forEach(p => {
+    const x = 20;
+    const w = stripWidth - 40;
+    ctx.drawImage(p, x, y, w, singleHeight);
     y += singleHeight + gap;
   });
 
-  // Branding logo + text
-  let logoFile = "dari-logo-outline.png"; // default for Plain
-  if (frame === "minimal") {
-    logoFile = "dari-logo-filled.png";
-  } else if (frame === "signature") {
-    logoFile = "dari-logo-outline-transparent.png";
-  }
+  let logoFile = "dari-logo-outline.png";
+  if (frame === "minimal") logoFile = "dari-logo-filled.png";
+  if (frame === "signature") logoFile = "dari-logo-outline-transparent.png";
 
   const textColor = (frame === "signature") ? "#000000" : "#374139";
 
@@ -668,7 +653,6 @@ async function buildStrip() {
 
   try {
     const logoImg = await loadLogo(logoFile);
-
     let desiredWidth = stripWidth * 0.5;
     let ratio = logoImg.height / logoImg.width;
     let logoW = desiredWidth;
@@ -683,10 +667,8 @@ async function buildStrip() {
 
     const logoX = (stripWidth - logoW) / 2;
     const logoY = brandingTop + 10;
-
     ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
 
-    // Text centered below logo
     ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.font = "600 24px 'Montserrat', system-ui, sans-serif";
@@ -695,30 +677,6 @@ async function buildStrip() {
     const maxTextY = brandingTop + brandingHeight - 40;
     const safeTextY = Math.min(textY, maxTextY);
     ctx.fillText("Daily Ritual PH", stripWidth / 2, safeTextY);
-
-    // Vertical date on right side, safely inside
-    ctx.save();
-    ctx.fillStyle = textColor;
-    ctx.font = "500 16px 'Montserrat', system-ui, sans-serif";
-
-    const dateBaseX = stripWidth - 28; // inset from right
-    const dateBaseY = stripHeight - 90; // lifted up from bottom
-
-    ctx.translate(dateBaseX, dateBaseY);
-    ctx.rotate(-Math.PI / 2);
-    ctx.textAlign = "center";
-    ctx.fillText(dateStr, 0, 0);
-    ctx.restore();
-
-  } catch (e) {
-    console.warn("Logo could not be loaded; continuing without it.", e);
-
-    // Fallback: just text + date
-    ctx.fillStyle = textColor;
-    ctx.textAlign = "center";
-    ctx.font = "600 24px 'Montserrat', system-ui, sans-serif";
-    const fallbackY = brandingTop + brandingHeight / 2;
-    ctx.fillText("Daily Ritual PH", stripWidth / 2, fallbackY);
 
     ctx.save();
     ctx.fillStyle = textColor;
@@ -730,40 +688,43 @@ async function buildStrip() {
     ctx.textAlign = "center";
     ctx.fillText(dateStr, 0, 0);
     ctx.restore();
+  } catch (e) {
+    console.warn("Logo failed to load:", e);
   }
 
-  // Optional borders
   if (frame === "minimal") {
     ctx.strokeStyle = "#374139";
     ctx.lineWidth = 10;
     ctx.strokeRect(10, 10, stripWidth - 20, stripHeight - 20);
   }
-
   if (frame === "signature") {
     ctx.strokeStyle = "#4f1414";
     ctx.lineWidth = 8;
     ctx.strokeRect(6, 6, stripWidth - 12, stripHeight - 12);
   }
 
-  // Show final strip
+  // show strip
   video.style.display = "none";
   canvas.style.display = "block";
 
-  statusText.textContent = "Strip ready! You can print or scan the QR code.";
+  liveControls.style.display = "none";
+  resultControls.style.display = "flex";
 
   retakeBtn.disabled = false;
   printBtn.disabled = false;
 
+  statusText.textContent = "Strip ready! You can retake, print, or tap Download for QR.";
+
+  // start upload in background so QR is ready when asked
   uploadStripToCloudinary();
 }
 
-/* --------------------------------
-   UPLOAD TO CLOUDINARY + QR
------------------------------------*/
-function uploadStripToCloudinary() {
+/* -----------------------------
+   CLOUDINARY & QR
+------------------------------*/
+function uploadStripToCloudinary(onSuccess) {
   if (!cloudinaryConfigured()) {
-    statusText.textContent +=
-      " (Cloudinary not configured correctly, QR disabled.)";
+    statusText.textContent += " (Cloudinary not configured, QR disabled.)";
     return;
   }
 
@@ -775,17 +736,13 @@ function uploadStripToCloudinary() {
       formData.append("file", blob);
       formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-      const res = await fetch(url, {
-        method: "POST",
-        body: formData
-      });
-
+      const res = await fetch(url, { method: "POST", body: formData });
       const data = await res.json();
       const fileUrl = data.secure_url || data.url;
       if (!fileUrl) throw new Error("No URL in Cloudinary response");
 
-      makeQR(fileUrl);
-      statusText.textContent += " QR ready.";
+      lastUploadedUrl = fileUrl;
+      if (onSuccess) onSuccess(fileUrl);
     } catch (err) {
       console.error(err);
       statusText.textContent = "Strip ready. QR upload failed.";
@@ -793,27 +750,46 @@ function uploadStripToCloudinary() {
   }, "image/jpeg");
 }
 
-function makeQR(url) {
+function showQRCode(url) {
+  if (!url) return;
+  qrPanel.style.display = "block";
   qrBox.innerHTML = "";
   new QRCode(qrBox, {
     text: url,
-    width: 180,
-    height: 180
+    width: 140,
+    height: 140
   });
 }
 
-/* --------------------------------
-   RETAKE + PRINT
------------------------------------*/
+downloadBtn.addEventListener("click", () => {
+  resetIdleTimer();
+  if (lastUploadedUrl) {
+    showQRCode(lastUploadedUrl);
+  } else {
+    uploadStripToCloudinary(showQRCode);
+  }
+});
+
+qrClose.addEventListener("click", () => {
+  qrPanel.style.display = "none";
+});
+
+/* -----------------------------
+   RETAKE & PRINT
+------------------------------*/
 retakeBtn.addEventListener("click", () => {
   resetIdleTimer();
   stripImages = [];
+  lastUploadedUrl = null;
+  qrPanel.style.display = "none";
+
   canvas.style.display = "none";
   video.style.display = "block";
-  startBtn.disabled = false;
-  retakeBtn.disabled = true;
-  qrBox.innerHTML = "";
-  statusText.textContent = "Camera ready. Tap “Start 3-Shot Strip” again.";
+
+  liveControls.style.display = "flex";
+  resultControls.style.display = "none";
+
+  statusText.textContent = "Camera ready. Tap “Start” again.";
 });
 
 printBtn.addEventListener("click", () => {
@@ -825,19 +801,14 @@ printBtn.addEventListener("click", () => {
       <head>
         <title>DARI Strip</title>
         <style>
-          @page {
-            margin: 0;
-          }
+          @page { margin: 0; }
           body {
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
           }
-          img {
-            width: 53mm; /* target width for 53mm thermal printer */
-          }
+          img { width: 53mm; }
         </style>
       </head>
       <body>
@@ -847,17 +818,23 @@ printBtn.addEventListener("click", () => {
   `);
   win.document.close();
   win.focus();
-  win.onload = function () {
-    win.print();
-  };
+  win.onload = () => win.print();
 });
 
-/* --------------------------------
-   ON LOAD
------------------------------------*/
+/* -----------------------------
+   ATTRACT EVENTS & LOAD
+------------------------------*/
+attractButton.addEventListener("click", () => {
+  goToBooth();
+});
+
+["click", "touchstart", "pointerdown", "keydown"].forEach(evt => {
+  window.addEventListener(evt, resetIdleTimer);
+});
+
 window.addEventListener("load", () => {
-  // Start in attract mode; camera starts on first tap
-  goToAttract();
+  appShell.style.visibility = "visible";
+  attractScreen.style.display = "flex";
   updateFramePreview();
 });
 </script>

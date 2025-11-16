@@ -19,277 +19,283 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      margin: 0;
-      font-family: "Montserrat", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #e7e1d5;
-      color: #222;
-      height: 100vh;
-      overflow: hidden;
-    }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
 
-    header {
-      background: #3c463f;
-      color: #fff;
-      padding: 12px;
-      text-align: center;
-      font-size: 22px;
-      letter-spacing: 2px;
-      font-weight: 700;
-    }
+  body {
+    font-family: "Montserrat", sans-serif;
+    background: #e7e1d5;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
+  header {
+    background: #3c463f;
+    color: #fff;
+    padding: 14px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+
+  /* ----------------------------
+     MAIN CONTAINER
+  -----------------------------*/
+  .container {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column; /* default = portrait */
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  /* LANDSCAPE = two columns */
+  @media (orientation: landscape) {
     .container {
-      display: flex;
-      flex-direction: column;
-      height: calc(100vh - 56px);
+      flex-direction: row;
     }
-
-    @media (min-width: 900px) {
-      .container {
-        flex-direction: row;
-      }
-    }
-
-    .left {
-      flex: 3;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
     .right {
-      flex: 1;
-      background: #f9f7f3;
+      border-left: 4px solid #3c463f;
+      border-top: none;
+    }
+  }
+
+  /* PORTRAIT = stacked vertically */
+  @media (orientation: portrait) {
+    .container {
+      flex-direction: column;
+    }
+    .right {
       border-top: 4px solid #3c463f;
-      padding: 16px;
+      border-left: none;
     }
+  }
 
-    @media (min-width: 900px) {
-      .right {
-        border-top: none;
-        border-left: 4px solid #3c463f;
-      }
-    }
+  /* ----------------------------
+     LEFT SIDE (LIVE PREVIEW)
+  -----------------------------*/
+  .left {
+    flex: 0 0 65%; /* portrait */
+    display: flex;
+    padding: 10px;
+    box-sizing: border-box;
+  }
 
-    .previewWrapper {
-      position: relative;
-      width: 100%;
-      flex: 1;
-      min-height: 260px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #000;
+  @media (orientation: landscape) {
+    .left {
+      flex: 3 1 auto;
     }
+  }
 
-    #cameraPreview,
-    #canvasOutput {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  .previewWrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+  }
 
-    #canvasOutput {
-      display: none;
-      object-fit: contain;
-      background: #111;
-    }
+  #cameraPreview,
+  #canvasOutput {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 
-    /* Overlays inside preview */
-    #frameOverlay,
-    #flashOverlay,
-    #countdownOverlay,
-    #previewLogo {
-      position: absolute;
-      pointer-events: none;
-    }
+  #canvasOutput {
+    display: none;
+    object-fit: contain;
+    background: #111;
+  }
 
-    #frameOverlay {
-      inset: 0;
-      box-sizing: border-box;
-      z-index: 2;
-      background: transparent;
-    }
+  /* overlays */
+  #frameOverlay,
+  #previewLogo,
+  #flashOverlay,
+  #countdownOverlay {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+  }
 
-    /* Logo preview ON TOP OF VIDEO, no white box */
-    #previewLogo {
-      top: 12px;
-      right: 12px;
-      max-width: 22%;
-      height: auto;
-      z-index: 3;
-    }
+  #frameOverlay {
+    inset: 0;
+    border: none;
+    z-index: 2;
+  }
 
-    #flashOverlay {
-      inset: 0;
-      background: #ffffff;
-      opacity: 0;
-      transition: opacity 0.15s ease-out;
-      z-index: 4;
-    }
+  .previewWrapper.frame-minimal #frameOverlay {
+    border: 6px solid #DFD7C9;
+  }
+  .previewWrapper.frame-signature #frameOverlay {
+    border: 6px solid #6b1e1e;
+  }
 
-    #flashOverlay.active {
-      opacity: 1;
-    }
+  #previewLogo {
+    top: 14px;
+    right: 14px;
+    width: 22%;
+    height: auto;
+  }
 
-    #countdownOverlay {
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 64px;
-      font-weight: 700;
-      color: #ffffff;
-      text-shadow: 0 0 12px rgba(0,0,0,0.8);
-      z-index: 5;
-    }
+  #flashOverlay {
+    inset: 0;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.15s ease-out;
+    z-index: 5;
+  }
 
-    /* Preview frame styles – borders only */
-    .previewWrapper.frame-none #frameOverlay {
-      border: none;
-    }
+  #flashOverlay.active {
+    opacity: 1;
+  }
 
-    .previewWrapper.frame-minimal #frameOverlay {
-      border: 6px solid #DFD7C9; /* cream border */
-    }
+  #countdownOverlay {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 64px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 0 10px rgba(0,0,0,0.8);
+    z-index: 6;
+  }
 
-    .previewWrapper.frame-signature #frameOverlay {
-      border: 6px solid #6b1e1e; /* red border */
-    }
+  /* ----------------------------
+     RIGHT SIDE (CONTROLS)
+  -----------------------------*/
+  .right {
+    flex: 1 1 auto;
+    background: #f9f7f3;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow-y: auto;          /* allow scrolling only here */
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-    .statusText {
-      text-align: center;
-      font-size: 14px;
-      min-height: 18px;
-    }
+  select,
+  button {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: none;
+    font-family: "Montserrat", sans-serif;
+  }
 
-    .controls {
-      margin-top: 8px;
-    }
+  select {
+    border: 1px solid #c0b8aa;
+    background: #fff;
+  }
 
-    select,
-    button {
-      width: 100%;
-      padding: 12px 14px;
-      font-size: 16px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      border: none;
-      box-sizing: border-box;
-      font-family: "Montserrat", system-ui, sans-serif;
-    }
+  button {
+    background: #6b1e1e;
+    color: white;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
 
-    select {
-      background: #fff;
-      border: 1px solid #c0b8aa;
-    }
+  button.secondaryBtn {
+    background: white;
+    color: #3c463f;
+    border: 1px solid #3c463f;
+  }
 
-    button {
-      background: #6b1e1e;
-      color: #fff;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
+  button:disabled {
+    opacity: 0.5;
+  }
 
-    button:disabled {
-      background: #aaa;
-      cursor: default;
-    }
+  .statusText {
+    font-size: 14px;
+    text-align: center;
+    min-height: 18px;
+    color: #444;
+  }
 
-    .secondaryBtn {
-      background: #ffffff;
-      color: #3c463f;
-      border: 1px solid #3c463f;
-    }
+  /* ----------------------------
+     QR BOX (AFTER CAPTURE)
+  -----------------------------*/
+  .qrBox {
+    text-align: center;
+    padding: 16px;
+    background: white;
+    border: 2px solid #3c463f;
+    border-radius: 10px;
+  }
 
-    .qrBox {
-      margin-top: 10px;
-      text-align: center;
-      padding: 14px;
-      background: #fff;
-      border-radius: 8px;
-      border: 2px solid #3c463f;
-      box-sizing: border-box;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 8px;
-    }
+  #qrCode {
+    width: 180px;
+    height: 180px;
+    margin: 0 auto;
+  }
 
-    .qrBox h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-    }
+  .qrHint {
+    font-size: 13px;
+    color: #555;
+  }
 
-    #qrCode {
-      margin: 0 auto;
-      width: 180px;
-      height: 180px;
-    }
+  /* ----------------------------
+     ATTRACT SCREEN
+  -----------------------------*/
+  #attractScreen {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at top, #f3e7da, #dfd3c2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+    text-align: center;
+  }
 
-    .qrHint {
-      font-size: 12px;
-      color: #555;
-    }
+  #attractLogo {
+    max-width: 260px;
+    margin-bottom: 20px;
+  }
 
-    /* Attract screen */
-    #attractScreen {
-      position: fixed;
-      inset: 0;
-      background: radial-gradient(circle at top, #f3e7da, #dfd3c2);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      text-align: center;
-      padding: 24px;
-      box-sizing: border-box;
-    }
+  #attractTitle {
+    color: #3c463f;
+    font-size: 26px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
 
-    #attractLogo {
-      max-width: 260px;
-      height: auto;
-      margin-bottom: 24px;
-    }
+  #attractSub {
+    color: #6b1e1e;
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
 
-    #attractTitle {
-      font-size: 26px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #3c463f;
-      margin-bottom: 10px;
-    }
+  #attractButton {
+    background: #6b1e1e;
+    color: white;
+    padding: 16px 32px;
+    border: none;
+    border-radius: 999px;
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
 
-    #attractSub {
-      font-size: 16px;
-      color: #6b1e1e;
-      margin-bottom: 32px;
-    }
+  #attractHint {
+    font-size: 12px;
+    color: #444;
+    margin-top: 20px;
+  }
+</style>
 
-    #attractButton {
-      padding: 16px 32px;
-      border-radius: 999px;
-      background: #6b1e1e;
-      color: #fff;
-      border: none;
-      font-size: 18px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    }
-
-    #attractHint {
-      margin-top: 20px;
-      font-size: 12px;
-      color: #555;
-    }
-  </style>
 
   <!-- QR Generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
